@@ -1,2 +1,4 @@
-print "Yay math"
-* (2 + 3 4)2 4
+print (
+    "Yay math"
+    * (2 + 3 4)2 4
+)
