@@ -2,29 +2,56 @@
 typedef enum{PAREN_L, PAREN_R}Paren;
 
 typedef enum{TKN_IDENT, TKN_PAREN, TKN_NAT, TKN_STR, TKN_END, TKN_N}TokenType;
-char *TokenTypeStr[T_N] = {"TKN_IDENT", "TKN_PAREN", "TKN_NAT", "TKN_STR", "TKN_END"};
+char *TokenTypeStr[TKN_N] = {"TKN_IDENT", "TKN_PAREN", "TKN_NAT", "TKN_STR", "TKN_END"};
 
 typedef struct Token{
     TokenType type;
     union{
         Paren paren;
         uint nat;
-        char *type;
         char *ident;
         char *str;
     };
     struct Token *next;
 }Token;
 
+void freeTokens(Token *tokens)
+{
+    while(tokens){
+        Token *next = tokens->next;
+        free(tokens);
+        tokens = next;
+    }
+}
+
 void printTokens(Token *tokens)
 {
     Token *currentTkn = tokens;
     while(currentTkn){
         printf("type: %s\n", TokenTypeStr[currentTkn->type]);
-        switch (token->type) {
+        printf("value: ");
+        switch (currentTkn->type) {
+            case TKN_IDENT:
+                printf("%s\n", currentTkn->ident);
+                break;
+            case TKN_PAREN:
+                printf("%c\n", currentTkn->paren == PAREN_L ? '(':')');
+                break;
             case TKN_NAT:
-                printf()
+                printf("%u\n", currentTkn->nat);
+                break;
+            case TKN_STR:
+                printf("\"%s\"\n", currentTkn->str);
+                break;
+            case TKN_END:
+                printf("END\n");
+                break;
+            default:
+                panic("Unknown TokenType: %i\n", currentTkn->type);
+                break;
         }
+        currentTkn = currentTkn->next;
+        printf("\n");
     }
 }
 
@@ -50,15 +77,92 @@ TokenType tokenType(char *text)
     return TKN_IDENT;
 }
 
+uint lenTkn(char *text, const TokenType type)
+{
+    char *start = text;
+    switch(type){
+        case TKN_IDENT:
+            while(*text && !isspace(*text) && *text != '"' && *text != '(' && *text++ != ')');
+            return text-start;
+            break;
+        case TKN_PAREN:
+            return 1;
+            break;
+        case TKN_NAT:
+            while(*text && isdigit(*text))
+                text++;
+            return text-start;
+            break;
+        case TKN_STR:
+            if(*text != '"')
+                panic("First char of TKN_STR != '\"'");
+            while(*++text != '"' && *text);
+            if(!*text)
+                panic("Unclosed '\"'");
+            return text-start;
+            break;
+        case TKN_END:
+            return 0;
+            break;
+        default:
+            panic("Unknown TokenType: %i\n", type);
+            break;
+    }
+    return 0;
+}
+
+char *skipSpace(char *text)
+{
+    while(*text && isspace(*text))
+        text++;
+    return text;
+}
+
+char *generateTkn(char *text, Token *token)
+{
+    const uint len = lenTkn(text, token->type);
+    switch(token->type){
+        case TKN_IDENT:
+            token->ident = calloc(len+1, sizeof(char));
+            memcpy(token->ident, text, len);
+            return skipSpace(text+len);
+            break;
+        case TKN_PAREN:
+            token->paren = *text == '(' ? PAREN_L:PAREN_R;
+            return skipSpace(text+1);
+        case TKN_NAT:
+            for(uint i = 0; i < len; i++){
+                token->nat *=  10;
+                token->nat += *(text+(len-1)-i) - '0';
+            }
+            return skipSpace(text+len);
+            break;
+        case TKN_STR:
+            text++;
+            token->str = calloc(len, sizeof(char));
+            memcpy(token->str, text, len-1);
+            return skipSpace(text+len+1);
+            break;
+        case TKN_END:
+            return text;
+            break;
+        default:
+            panic("Unknown TokenType: %i\n", token->type);
+            break;
+    }
+    return text;
+}
+
 Token* tokenize(char *text)
 {
     Token *tokens = calloc(1, sizeof(Token));
     Token *currentTkn = tokens;
     while((currentTkn->type = tokenType(text)) != TKN_END){
-
+        text = generateTkn(text, currentTkn);
         currentTkn->next = calloc(1, sizeof(Token));
         currentTkn = currentTkn->next;
     }
+    return tokens;
 }
 
 
@@ -70,7 +174,11 @@ int main(int argc, char **argv)
     char *buf = fileReadText(inputFile);
     printf("Input file \"%s\":\n%s", inputFile, buf);
 
+    Token *tokens = tokenize(buf);
+    printf("\nTokens -\n");
+    printTokens(tokens);
 
     free(buf);
+    freeTokens(tokens);
     return 0;
 }
