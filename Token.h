@@ -111,23 +111,23 @@ char *generateTkn(char *text, Token *token)
         case TKN_IDENT:
             token->ident = calloc(len+1, sizeof(char));
             memcpy(token->ident, text, len);
-            return skipSpace(text+len);
+            return text+len;
             break;
         case TKN_PAREN:
             token->paren = *text == '(' ? PAREN_L:PAREN_R;
-            return skipSpace(text+1);
+            return text+1;
         case TKN_NAT:
             for(uint i = 0; i < len; i++){
                 token->nat *=  10;
                 token->nat += *(text+(len-1)-i) - '0';
             }
-            return skipSpace(text+len);
+            return text+len;
             break;
         case TKN_STR:
             text++;
             token->str = calloc(len, sizeof(char));
             memcpy(token->str, text, len-1);
-            return skipSpace(text+len+1);
+            return text+len+1;
             break;
         case TKN_END:
             return text;
@@ -143,8 +143,8 @@ Token* tokenize(char *text)
 {
     Token *tokens = calloc(1, sizeof(Token));
     Token *currentTkn = tokens;
-    while((currentTkn->type = tokenType(text)) != TKN_END){
-        text = generateTkn(text, currentTkn);
+    while((currentTkn->type = tokenType(skipSpace(text))) != TKN_END){
+        text = skipSpace(generateTkn(text, currentTkn));
         currentTkn->next = calloc(1, sizeof(Token));
         currentTkn = currentTkn->next;
     }
