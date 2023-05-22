@@ -14,5 +14,6 @@
 #include "Types.h"
 #include "File.h"
 #include "Token.h"
+#include "Parse.h"
 
 #endif /* end of include guard: INCLUDES_H */

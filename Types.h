@@ -6,8 +6,8 @@ typedef FILE File;
 
 typedef enum{PAREN_L, PAREN_R}Paren;
 
-typedef enum{TKN_IDENT, TKN_PAREN, TKN_NAT, TKN_STR, TKN_END, TKN_N}TokenType;
-char *TokenTypeStr[TKN_N] = {"TKN_IDENT", "TKN_PAREN", "TKN_NAT", "TKN_STR", "TKN_END"};
+typedef enum{TKN_IDENT, TKN_PAREN, TKN_NAT, TKN_STR, TKN_CHR, TKN_END, TKN_N}TokenType;
+char *TokenTypeStr[TKN_N] = {"TKN_IDENT", "TKN_PAREN", "TKN_NAT", "TKN_STR", "TKN_CHR", "TKN_END"};
 
 typedef struct Token{
     TokenType type;
@@ -16,6 +16,7 @@ typedef struct Token{
         uint nat;
         char *ident;
         char *str;
+        char chr;
     };
     struct Token *next;
 }Token;

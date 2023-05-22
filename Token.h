@@ -1,6 +1,21 @@
 #ifndef TOKEN_H
 #define TOKEN_H
 
+char chrTknEsc(const char c)
+{
+    switch (c){
+        case 'a': return '\a'; break;
+        case 'b': return '\b'; break;
+        case 'f': return '\f'; break;
+        case 'n': return '\n'; break;
+        case 'r': return '\r'; break;
+        case 't': return '\t'; break;
+        case 'v': return '\v'; break;
+        default: break;
+    }
+    return c;
+}
+
 void freeTokens(Token *tokens)
 {
     while(tokens){
@@ -29,6 +44,9 @@ void printTokens(Token *tokens)
             case TKN_STR:
                 printf("\"%s\"\n", currentTkn->str);
                 break;
+            case TKN_CHR:
+                printf("'%c'\n", currentTkn->chr);
+                break;
             case TKN_END:
                 printf("END\n");
                 break;
@@ -54,6 +72,9 @@ TokenType tokenType(char *text)
     if(*text == '"')
         return TKN_STR;
 
+    if(*text == '\'')
+        return TKN_CHR;
+
     if(*text == '(' || *text == ')')
         return TKN_PAREN;
 
@@ -75,17 +96,27 @@ uint lenTkn(char *text, const TokenType type)
             return 1;
             break;
         case TKN_NAT:
+            if(!isdigit(*text))
+                panic("First char of TKN_NAT is not digit. text = \"%s\"", text);
             while(*text && isdigit(*text))
                 text++;
             return text-start;
             break;
         case TKN_STR:
             if(*text != '"')
-                panic("First char of TKN_STR != '\"'");
-            while(*++text != '"' && *text);
+                panic("First char of TKN_STR != '\"'. text = \"%s\"", text);
+            while(*text && !(*text++ != '\\' && *text == '"'));
             if(!*text)
-                panic("Unclosed '\"'");
+                panic("Reached end of text with Unclosed '\"'. start = \"%s\"", start);
             return text-start;
+        case TKN_CHR:
+            if(*text++ != '\'')
+                panic("First char of TKN_CHR != '''. text = \"%s\"", text);
+            if(*text != '\\' && *(text+1) == '\'' )
+                return 1;
+            if(*text == '\\' && *(text+2) == '\'')
+                return 2;
+            panic("Invalid TKN_CHR. start = \"%s\"", start);
             break;
         case TKN_END:
             return 0;
@@ -128,6 +159,11 @@ char *generateTkn(char *text, Token *token)
             token->str = calloc(len, sizeof(char));
             memcpy(token->str, text, len-1);
             return text+len+1;
+            break;
+        case TKN_CHR:
+            text += len;
+            token->chr = len==2?chrTknEsc(*text) : *text;
+            return text+2;
             break;
         case TKN_END:
             return text;
